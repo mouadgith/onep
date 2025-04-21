@@ -147,6 +147,15 @@ const ParametrageGestion = () => {
           <ParametrageManager code="marque" label="Marques" />
         </Col>
       </Row>
+
+      <Row>
+        <Col md={6}>
+          <ParametrageManager code="activite" label="Activites" />
+        </Col>
+        <Col md={6}>
+          <ParametrageManager code="modele" label="Modeles" />
+        </Col>
+      </Row>
     </div>
   );
 };

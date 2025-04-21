@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './MaterielManager.css';
-import { Table, Button, Form, Modal, Alert, Container, Row, Col, Card, Badge } from 'react-bootstrap';
-import { PencilSquare, Trash, PlusLg, X, Funnel, FunnelFill } from 'react-bootstrap-icons';
+import { Table, Button, Form, Modal, Alert, Container, Badge, Col, Row, Card } from 'react-bootstrap';
+import { PencilSquare, Trash, PlusLg, Funnel, CheckLg } from 'react-bootstrap-icons';
 
 const MaterielManager = () => {
   const [materiels, setMateriels] = useState([]);
+  const [filteredMateriels, setFilteredMateriels] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     numero_serie: '',
@@ -19,33 +19,41 @@ const MaterielManager = () => {
     agent_matricule: '',
     numero_contrat: ''
   });
-  const [editingNumeroSerie, setEditingNumeroSerie] = useState(null); 
-  const [filters, setFilters] = useState([{ field: 'numero_serie', value: '' }]);
-  const [availableFields] = useState([
-    { label: 'Numéro Série', value: 'numero_serie' },
-    { label: 'Marque', value: 'marque' },
-    { label: 'Désignation Article', value: 'designation_article' },
-    { label: 'Modèle', value: 'modele' },
-    { label: 'Code ONEE', value: 'code_ONEE' },
-    { label: 'Activité', value: 'activite' },
-    { label: 'Famille', value: 'famille' },
-    { label: 'Sous-Famille', value: 'sous_famille' },
-    { label: 'Matricule Agent', value: 'agent_matricule' },
-    { label: 'Numéro Contrat', value: 'numero_contrat' }
-  ]);
+  const [editingNumeroSerie, setEditingNumeroSerie] = useState(null);
+  const [message, setMessage] = useState('');
+  const [updatedRow, setUpdatedRow] = useState(null);
   const [agents, setAgents] = useState([]);
   const [contrats, setContrats] = useState([]);
-  const [message, setMessage] = useState('');
+  const [activites, setActivites] = useState([]);
+  const [familles, setFamilles] = useState([]);
+  const [sousFamilles, setSousFamilles] = useState([]);
+  const [modeles, setModeles] = useState([]);
+  const [selectedFilters, setSelectedFilters] = useState({
+    activite: '',
+    famille: '',
+    sous_famille: '',
+    modele: '',
+    agent_matricule: '',
+    numero_contrat: ''
+  });
 
   useEffect(() => {
     fetchMateriels();
     fetchAgents();
     fetchContrats();
+    fetchParametrage('activite', setActivites);
+    fetchParametrage('famille', setFamilles);
+    fetchParametrage('sous-famille', setSousFamilles);
+    fetchParametrage('modele', setModeles);
   }, []);
 
-  const fetchMateriels = async (params = {}) => {
+  useEffect(() => {
+    applyFilters();
+  }, [selectedFilters, materiels]);
+
+  const fetchMateriels = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/materiels', { params });
+      const res = await axios.get('http://localhost:5000/api/materiels');
       setMateriels(res.data);
     } catch (error) {
       console.error('Fetch error:', error);
@@ -59,7 +67,6 @@ const MaterielManager = () => {
       setAgents(res.data);
     } catch (error) {
       console.error('Error fetching agents:', error);
-      setMessage('Error fetching agents');
     }
   };
 
@@ -69,8 +76,35 @@ const MaterielManager = () => {
       setContrats(res.data);
     } catch (error) {
       console.error('Error fetching contracts:', error);
-      setMessage('Error fetching contracts');
     }
+  };
+
+  const fetchParametrage = async (code, setter) => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/parametrage/${code}`);
+      setter(res.data.map(item => item.valeur));
+    } catch (error) {
+      console.error(`Error fetching ${code}:`, error);
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...materiels];
+    
+    Object.entries(selectedFilters).forEach(([key, value]) => {
+      if (value) {
+        filtered = filtered.filter(item => item[key] === value);
+      }
+    });
+
+    setFilteredMateriels(filtered);
+  };
+
+  const handleFilterChange = (field, value) => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      [field]: value === 'Tous' ? '' : value
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -78,61 +112,34 @@ const MaterielManager = () => {
     try {
       if (editingNumeroSerie) {
         await axios.put(`http://localhost:5000/api/materiels/${editingNumeroSerie}`, formData);
-        setMessage('Material updated successfully');
+        setMessage(`Matériel ${formData.numero_serie} mis à jour avec succès`);
+        setUpdatedRow(editingNumeroSerie);
       } else {
         await axios.post('http://localhost:5000/api/materiels', formData);
-        setMessage('Material added successfully');
+        setMessage(`Matériel ${formData.numero_serie} ajouté avec succès`);
       }
+      
+      setTimeout(() => setUpdatedRow(null), 2000);
+      setTimeout(() => setMessage(''), 5000);
+      
       fetchMateriels();
       resetForm();
+      setShowForm(false);
     } catch (error) {
-      console.error('Submission error:', error);
-      setMessage('Error saving material: ' + error.message);
+      setMessage("Erreur lors de l'enregistrement: " + error.message);
     }
   };
 
   const handleDelete = async (numero_serie) => {
-    if (!window.confirm('Are you sure you want to delete this material?')) return;
+    if (!window.confirm('Supprimer ce matériel ?')) return;
     try {
       await axios.delete(`http://localhost:5000/api/materiels/${numero_serie}`);
-      setMessage('Material deleted successfully');
+      setMessage('Matériel supprimé avec succès');
       fetchMateriels();
+      setTimeout(() => setMessage(''), 5000);
     } catch (error) {
-      console.error('Delete error:', error);
-      setMessage('Error deleting material');
+      setMessage("Erreur lors de la suppression: " + error.message);
     }
-  };
-
-  const handleAddFilter = () => {
-    setFilters([...filters, { field: 'marque', value: '' }]);
-  };
-
-  const handleRemoveFilter = (index) => {
-    const newFilters = filters.filter((_, i) => i !== index);
-    setFilters(newFilters);
-  };
-
-  const handleFilterChange = (index, type, value) => {
-    const newFilters = [...filters];
-    newFilters[index][type] = value;
-    setFilters(newFilters);
-  };
-
-  const handleSearch = async () => {
-    const params = {};
-    
-    filters.forEach(filter => {
-      if (filter.value.trim()) {
-        params[filter.field] = filter.value.trim();
-      }
-    });
-
-    await fetchMateriels(params);
-  };
-
-  const handleClearFilters = () => {
-    setFilters([{ field: 'numero_serie', value: '' }]);
-    fetchMateriels();
   };
 
   const resetForm = () => {
@@ -149,10 +156,16 @@ const MaterielManager = () => {
       numero_contrat: ''
     });
     setEditingNumeroSerie(null);
-    setShowForm(false);
   };
+
+  const openEditModal = (materiel) => {
+    setFormData(materiel);
+    setEditingNumeroSerie(materiel.numero_serie);
+    setShowForm(true);
+  };
+
   return (
-    <div className="py-4">
+    <Container className="py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>Gestion des Matériels</h1>
         <Button 
@@ -168,74 +181,123 @@ const MaterielManager = () => {
       </div>
 
       {message && (
-        <Alert variant={message.includes('Error') ? 'danger' : 'success'} dismissible onClose={() => setMessage('')}>
+        <Alert variant={message.includes('Erreur') ? 'danger' : 'success'} dismissible onClose={() => setMessage('')}>
           {message}
         </Alert>
       )}
 
       {/* Filter Section */}
       <Card className="mb-4">
-        <Card.Header className="d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Filtres de Recherche</h5>
-          <div>
-            <Button variant="outline-secondary" size="sm" onClick={handleAddFilter} className="me-2">
-              Ajouter Filtre
-            </Button>
-            <Button variant="outline-danger" size="sm" onClick={handleClearFilters}>
-              Réinitialiser
-            </Button>
-          </div>
+        <Card.Header>
+          <h5 className="d-flex align-items-center gap-2">
+            <Funnel size={20} /> Filtres
+          </h5>
         </Card.Header>
         <Card.Body>
-          {filters.map((filter, index) => (
-            <Row key={index} className="mb-3 align-items-center">
-              <Col md={4}>
+          <Row>
+            <Col md={4}>
+              <Form.Group className="mb-3">
+                <Form.Label>Activité</Form.Label>
                 <Form.Select
-                  value={filter.field}
-                  onChange={(e) => handleFilterChange(index, 'field', e.target.value)}
+                  value={selectedFilters.activite}
+                  onChange={(e) => handleFilterChange('activite', e.target.value)}
                 >
-                  {availableFields.map((field) => (
-                    <option key={field.value} value={field.value}>
-                      {field.label}
+                  <option value="">Tous</option>
+                  {activites.map((item, index) => (
+                    <option key={index} value={item}>{item}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            
+            <Col md={4}>
+              <Form.Group className="mb-3">
+                <Form.Label>Famille</Form.Label>
+                <Form.Select
+                  value={selectedFilters.famille}
+                  onChange={(e) => handleFilterChange('famille', e.target.value)}
+                >
+                  <option value="">Tous</option>
+                  {familles.map((item, index) => (
+                    <option key={index} value={item}>{item}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            
+            <Col md={4}>
+              <Form.Group className="mb-3">
+                <Form.Label>Sous-Famille</Form.Label>
+                <Form.Select
+                  value={selectedFilters.sous_famille}
+                  onChange={(e) => handleFilterChange('sous_famille', e.target.value)}
+                >
+                  <option value="">Tous</option>
+                  {sousFamilles.map((item, index) => (
+                    <option key={index} value={item}>{item}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
+          
+          <Row>
+            <Col md={4}>
+              <Form.Group className="mb-3">
+                <Form.Label>Modèle</Form.Label>
+                <Form.Select
+                  value={selectedFilters.modele}
+                  onChange={(e) => handleFilterChange('modele', e.target.value)}
+                >
+                  <option value="">Tous</option>
+                  {modeles.map((item, index) => (
+                    <option key={index} value={item}>{item}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            
+            <Col md={4}>
+              <Form.Group className="mb-3">
+                <Form.Label>Agent</Form.Label>
+                <Form.Select
+                  value={selectedFilters.agent_matricule}
+                  onChange={(e) => handleFilterChange('agent_matricule', e.target.value)}
+                >
+                  <option value="">Tous</option>
+                  {agents.map(agent => (
+                    <option key={agent.matricule} value={agent.matricule}>
+                      {agent.nom} {agent.prenom}
                     </option>
                   ))}
                 </Form.Select>
-              </Col>
-              <Col md={6}>
-                <Form.Control
-                  type="text"
-                  placeholder={`Recherche par ${availableFields.find(f => f.value === filter.field)?.label}`}
-                  value={filter.value}
-                  onChange={(e) => handleFilterChange(index, 'value', e.target.value)}
-                />
-              </Col>
-              <Col md={2} className="text-end">
-                {filters.length > 1 && (
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    onClick={() => handleRemoveFilter(index)}
-                  >
-                    <X size={16} />
-                  </Button>
-                )}
-              </Col>
-            </Row>
-          ))}
-          <Button 
-            variant="primary" 
-            onClick={handleSearch}
-            className="d-flex align-items-center gap-2"
-          >
-            <FunnelFill size={16} /> Appliquer les Filtres
-          </Button>
+              </Form.Group>
+            </Col>
+            
+            <Col md={4}>
+              <Form.Group className="mb-3">
+                <Form.Label>Contrat</Form.Label>
+                <Form.Select
+                  value={selectedFilters.numero_contrat}
+                  onChange={(e) => handleFilterChange('numero_contrat', e.target.value)}
+                >
+                  <option value="">Tous</option>
+                  {contrats.map(contrat => (
+                    <option key={contrat.numero_contrat} value={contrat.numero_contrat}>
+                      {contrat.numero_contrat} - {contrat.objet}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
         </Card.Body>
       </Card>
 
       {/* Material Form Modal */}
       <Modal show={showForm} onHide={() => setShowForm(false)} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>{editingNumeroSerie ? 'Modifier Matériel' : 'Ajouter Nouveau Matériel'}</Modal.Title>
+          <Modal.Title>{editingNumeroSerie ? 'Modifier Matériel' : 'Ajouter Matériel'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={handleSubmit}>
@@ -247,7 +309,7 @@ const MaterielManager = () => {
                     type="text"
                     name="numero_serie"
                     value={formData.numero_serie}
-                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                    onChange={(e) => setFormData({...formData, numero_serie: e.target.value})}
                     required
                     disabled={!!editingNumeroSerie}
                   />
@@ -259,74 +321,93 @@ const MaterielManager = () => {
                     type="text"
                     name="marque"
                     value={formData.marque}
-                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                    onChange={(e) => setFormData({...formData, marque: e.target.value})}
                     required
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Désignation Article</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="designation_article"
-                    value={formData.designation_article}
-                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Modèle</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="modele"
-                    value={formData.modele}
-                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
                   />
                 </Form.Group>
               </Col>
 
               <Col md={6}>
                 <Form.Group className="mb-3">
+                  <Form.Label>Modèle</Form.Label>
+                  <Form.Select
+                    name="modele"
+                    value={formData.modele}
+                    onChange={(e) => setFormData({...formData, modele: e.target.value})}
+                  >
+                    <option value="">Sélectionner un modèle</option>
+                    {modeles.map((item, index) => (
+                      <option key={index} value={item}>{item}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
                   <Form.Label>Code ONEE</Form.Label>
                   <Form.Control
                     type="text"
                     name="code_ONEE"
                     value={formData.code_ONEE}
-                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Activité</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="activite"
-                    value={formData.activite}
-                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Famille</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="famille"
-                    value={formData.famille}
-                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Sous-Famille</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="sous_famille"
-                    value={formData.sous_famille}
-                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                    onChange={(e) => setFormData({...formData, code_ONEE: e.target.value})}
                   />
                 </Form.Group>
               </Col>
-            </Row>
+
+            <Col md={6}>
+            <Form.Group className="mb-3">
+                  <Form.Label>Désignation Article</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="designation_article"
+                    value={formData.designation_article}
+                    onChange={(e) => setFormData({...formData, designation_article: e.target.value})}
+                  />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                  <Form.Label>Activité</Form.Label>
+                  <Form.Select
+                    name="activite"
+                    value={formData.activite}
+                    onChange={(e) => setFormData({...formData, activite: e.target.value})}
+                  >
+                    <option value="">Sélectionner une activité</option>
+                    {activites.map((item, index) => (
+                      <option key={index} value={item}>{item}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+            </Col>
+
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Famille</Form.Label>
+                <Form.Select
+                  name="famille"
+                  value={formData.famille}
+                  onChange={(e) => setFormData({...formData, famille: e.target.value})}
+                >
+                  <option value="">Sélectionner une famille</option>
+                  {familles.map((item, index) => (
+                    <option key={index} value={item}>{item}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Sous-Famille</Form.Label>
+                <Form.Select
+                  name="sous_famille"
+                  value={formData.sous_famille}
+                  onChange={(e) => setFormData({...formData, sous_famille: e.target.value})}
+                >
+                  <option value="">Sélectionner une sous-famille</option>
+                  {sousFamilles.map((item, index) => (
+                    <option key={index} value={item}>{item}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
 
             <Row>
               <Col md={6}>
@@ -335,7 +416,7 @@ const MaterielManager = () => {
                   <Form.Select
                     name="agent_matricule"
                     value={formData.agent_matricule}
-                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                    onChange={(e) => setFormData({...formData, agent_matricule: e.target.value})}
                   >
                     <option value="">Sélectionner un agent</option>
                     {agents.map(agent => (
@@ -346,17 +427,18 @@ const MaterielManager = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
+
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Contrat</Form.Label>
                   <Form.Select
                     name="numero_contrat"
                     value={formData.numero_contrat}
-                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                    onChange={(e) => setFormData({...formData, numero_contrat: e.target.value})}
                   >
                     <option value="">Sélectionner un contrat</option>
                     {contrats.map(contrat => (
-                      <option key={contrat.id} value={contrat.numero_contrat}>
+                      <option key={contrat.numero_contrat} value={contrat.numero_contrat}>
                         {contrat.numero_contrat} - {contrat.objet}
                       </option>
                     ))}
@@ -370,8 +452,8 @@ const MaterielManager = () => {
           <Button variant="secondary" onClick={() => setShowForm(false)}>
             Annuler
           </Button>
-          <Button variant="primary" onClick={handleSubmit}>
-            {editingNumeroSerie ? 'Mettre à jour' : 'Enregistrer'}
+          <Button variant="primary" onClick={handleSubmit} className="d-flex align-items-center gap-2">
+            <CheckLg size={16} /> {editingNumeroSerie ? 'Modifier' : 'Ajouter'}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -380,41 +462,42 @@ const MaterielManager = () => {
       <Card>
         <Card.Header as="h5">Liste des Matériels</Card.Header>
         <Card.Body>
-          {materiels.length === 0 ? (
+          {filteredMateriels.length === 0 ? (
             <Alert variant="info">Aucun matériel trouvé</Alert>
           ) : (
             <div className="table-responsive">
               <Table striped bordered hover>
                 <thead className="table-dark">
                   <tr>
-                    {availableFields.map((field) => (
-                      <th key={field.value}>{field.label}</th>
-                    ))}
+                    <th>Numéro Série</th>
+                    <th>Marque</th>
+                    <th>Modèle</th>
+                    <th>Activité</th>
+                    <th>Famille</th>
+                    <th>Agent</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {materiels.map((mat) => (
-                    <tr key={mat.numero_serie}>
-                      {availableFields.map((field) => (
-                        <td key={field.value}>
-                          {field.value === 'numero_serie' ? (
-                            <Badge bg="secondary">{mat[field.value]}</Badge>
-                          ) : (
-                            mat[field.value] || '-'
-                          )}
-                        </td>
-                      ))}
+                  {filteredMateriels.map(mat => (
+                    <tr 
+                      key={mat.numero_serie}
+                      className={updatedRow === mat.numero_serie ? 'table-success blink' : ''}
+                    >
+                      <td><Badge bg="secondary">{mat.numero_serie}</Badge></td>
+                      <td>{mat.marque}</td>
+                      <td>{mat.modele || '-'}</td>
+                      <td>{mat.activite || '-'}</td>
+                      <td>{mat.famille || '-'}</td>
                       <td>
-                        <div className="d-flex gap-2 justify-content-center">
+                        {agents.find(a => a.matricule.toString() === mat.agent_matricule)?.nom || '-'}
+                      </td>
+                      <td>
+                        <div className="d-flex gap-2">
                           <Button 
                             variant="outline-primary" 
                             size="sm" 
-                            onClick={() => {
-                              setFormData(mat);
-                              setEditingNumeroSerie(mat.numero_serie);
-                              setShowForm(true);
-                            }}
+                            onClick={() => openEditModal(mat)}
                             className="d-flex align-items-center gap-1"
                           >
                             <PencilSquare size={14} /> Modifier
@@ -437,7 +520,7 @@ const MaterielManager = () => {
           )}
         </Card.Body>
       </Card>
-    </div>
+    </Container>
   );
 };
 
