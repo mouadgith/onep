@@ -1,0 +1,368 @@
+/* .App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.App {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.message {
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+}
+
+.form-container {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+button {
+  padding: 8px 15px;
+  margin-right: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.agents-list {
+  margin-top: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+
+tr:hover {
+  background-color: #f5f5f5;
+} */
+/* Global Resets and Base Styles */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  background-color: #fff;
+  color: #333;
+}
+
+/* App Container */
+.App {
+  text-align: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Logo Animation Styles */
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+  transition: transform 0.5s ease-in-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Message Styling */
+.message {
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+}
+
+/* Form Container */
+.form-container {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Button Styles */
+button {
+  padding: 8px 15px;
+  margin-right: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+/* Agents List and Table */
+.agents-list {
+  margin-top: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+
+tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* Navbar Styles */
+.header {
+  padding: 0.8rem 5%;
+  width: 100%;
+  max-width: 133rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100px;
+  z-index: 100;
+}
+
+.logo {
+  width: 9rem;
+}
+
+/* Navigation Menu - Desktop */
+.Nav-menu {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.Nav-menu a {
+  font-weight: 500;
+  font-size: 1.05rem;
+  color: var(--bg-text-color, #333);
+  transition: color 0.2s ease;
+}
+
+.Nav-menu a:hover {
+  color: var(--primary-color, #4CAF50);
+}
+
+/* Navigation Buttons */
+.nav-btns {
+  display: flex;
+  gap: 0.7rem;
+}
+
+.nav-btns .nav-btn {
+  padding: 0.8rem 2rem;
+  font-weight: 500;
+  font-size: 1.05rem;
+}
+
+.nav-btns .nav-btn .sign-in {
+  color: var(--bg-text-color, #333);
+}
+
+.nav-btns .nav-btn.sign-in:hover {
+  color: var(--primary-color, #4CAF50);
+}
+
+.nav-btns .nav-btn.register {
+  color: var(--white-text-color, #fff);
+  background: var(--primary-color, #4CAF50);
+  box-shadow: var(--primary-shadow, 2px 2px 5px rgba(0, 0, 0, 0.2));
+  border-radius: var(--btn-radius, 4px);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.nav-btns .nav-btn.register:hover {
+  background: var(--hover-color, #45a049);
+  box-shadow: var(--hover-shadow, 2px 2px 5px rgba(0, 0, 0, 0.3));
+}
+
+/* Mobile Navigation Toggle */
+.openNav {
+  display: none;
+}
+
+/* Hide .nav-btns inside <ul> by default */
+ul .nav-btns {
+  display: none;
+}
+
+/* Responsive Styles */
+@media screen and (max-width: 1115px) {
+
+  .logo {
+    width: 8rem;
+  }
+
+  .Nav-menu {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 100px;
+    left: -100%;
+    background: #fff;
+    z-index: 100;
+    height: calc(100vh - 100px);
+    width: 100%;
+    transition: left 0.5s ease;
+    padding-top: 2rem;
+  }
+
+  .Nav-menu a {
+    font-size: 1.5rem;
+    font-weight: 400;
+    padding: 10px 0;
+  }
+
+  .Nav-menu.active {
+    left: 0;
+  }
+
+  .openNav {
+    display: block;
+    cursor: pointer;
+  }
+
+  /* Optional: If you wish to display nav-btns inside menu on mobile */
+  ul .nav-btns {
+    display: block;
+    margin-top: 1rem;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .logo {
+    width: 7rem;
+  }
+  
+  .nav-btns {
+    display: none;
+  }
+
+  ul .nav-btns {
+    display: block;
+  }
+}
