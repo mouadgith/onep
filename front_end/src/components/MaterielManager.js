@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './MaterielManager.css';
+import { Table, Button, Form, Modal, Alert, Container, Row, Col, Card, Badge } from 'react-bootstrap';
+import { PencilSquare, Trash, PlusLg, X, Funnel, FunnelFill } from 'react-bootstrap-icons';
 
 const MaterielManager = () => {
   const [materiels, setMateriels] = useState([]);
@@ -150,194 +152,291 @@ const MaterielManager = () => {
     setShowForm(false);
   };
   return (
-    <div className="materiel-container">
-      <h2>Gestion des Matériels</h2>
-
-      {message && <div className="message">{message}</div>}
-
-      <div className="filter-section">
-        <div className="filter-header">
-          <h3>Filtres de Recherche</h3>
-          <div className="filter-controls">
-            <button onClick={handleAddFilter}>Ajouter Filtre</button>
-            <button onClick={handleClearFilters}>Réinitialiser</button>
-          </div>
-        </div>
-
-        {filters.map((filter, index) => (
-          <div className="filter-row" key={index}>
-            <select
-              value={filter.field}
-              onChange={(e) => handleFilterChange(index, 'field', e.target.value)}
-            >
-              {availableFields.map((field) => (
-                <option key={field.value} value={field.value}>
-                  {field.label}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="text"
-              placeholder={`Recherche par ${availableFields.find(f => f.value === filter.field)?.label}`}
-              value={filter.value}
-              onChange={(e) => handleFilterChange(index, 'value', e.target.value)}
-            />
-
-            {filters.length > 1 && (
-              <button
-                className="remove-filter"
-                onClick={() => handleRemoveFilter(index)}
-              >
-                ×
-              </button>
-            )}
-          </div>
-        ))}
-
-        <button className="search-button" onClick={handleSearch}>
-          Appliquer les Filtres
-        </button>
+    <div className="py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gestion des Matériels</h1>
+        <Button 
+          variant="primary" 
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
+          className="d-flex align-items-center gap-2"
+        >
+          <PlusLg size={18} /> Ajouter Matériel
+        </Button>
       </div>
 
-      <button className="toggle-form-button" onClick={() => setShowForm(!showForm)}>
-        {showForm ? 'Annuler' : 'Ajouter Nouveau Matériel'}
-      </button>
-
-      {showForm && (
-        <form className="material-form" onSubmit={handleSubmit}>
-          <div className="form-columns">
-            <div className="form-column">
-              <input
-                type="text"
-                placeholder="Numéro Série *"
-                name="numero_serie"
-                value={formData.numero_serie}
-                onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-                required
-                disabled={!!editingNumeroSerie}
-              />
-              <input
-                type="text"
-                placeholder="Marque *"
-                name="marque"
-                value={formData.marque}
-                onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-                required
-              />
-              <input
-                type="text"
-                placeholder="Désignation Article"
-                name="designation_article"
-                value={formData.designation_article}
-                onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-              />
-              <input
-                type="text"
-                placeholder="Modèle"
-                name="modele"
-                value={formData.modele}
-                onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-              />
-            </div>
-            
-            <div className="form-column">
-              <input
-                type="text"
-                placeholder="Code ONEE"
-                name="code_ONEE"
-                value={formData.code_ONEE}
-                onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-              />
-              <input
-                type="text"
-                placeholder="Activité"
-                name="activite"
-                value={formData.activite}
-                onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-              />
-              <input
-                type="text"
-                placeholder="Famille"
-                name="famille"
-                value={formData.famille}
-                onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-              />
-              <input
-                type="text"
-                placeholder="Sous-Famille"
-                name="sous_famille"
-                value={formData.sous_famille}
-                onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-              />
-            </div>
-
-            <div className="form-column">
-              <select
-                name="agent_matricule"
-                value={formData.agent_matricule}
-                onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-              >
-                <option value="">Sélectionner un agent</option>
-                {agents.map(agent => (
-                  <option key={agent.matricule} value={agent.matricule}>
-                    {agent.nom} {agent.prenom} ({agent.matricule})
-                  </option>
-                ))}
-              </select>
-              <select
-                name="numero_contrat"
-                value={formData.numero_contrat}
-                onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
-              >
-                <option value="">Sélectionner un contrat</option>
-                {contrats.map(contrat => (
-                  <option key={contrat.id} value={contrat.numero_contrat}>
-                    {contrat.numero_contrat} - {contrat.objet}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <button type="submit">{editingNumeroSerie ? 'Mettre à jour' : 'Enregistrer'}</button>
-          <button type="button" onClick={resetForm}>Annuler</button>
-        </form>
+      {message && (
+        <Alert variant={message.includes('Error') ? 'danger' : 'success'} dismissible onClose={() => setMessage('')}>
+          {message}
+        </Alert>
       )}
 
-      <div className="materials-list">
-        <h3>Liste des Matériels</h3>
-        {materiels.length === 0 ? (
-          <p>Aucun matériel trouvé</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                {availableFields.map((field) => (
-                  <th key={field.value}>{field.label}</th>
-                ))}
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {materiels.map((mat) => (
-                <tr key={mat.numero_serie}>
+      {/* Filter Section */}
+      <Card className="mb-4">
+        <Card.Header className="d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Filtres de Recherche</h5>
+          <div>
+            <Button variant="outline-secondary" size="sm" onClick={handleAddFilter} className="me-2">
+              Ajouter Filtre
+            </Button>
+            <Button variant="outline-danger" size="sm" onClick={handleClearFilters}>
+              Réinitialiser
+            </Button>
+          </div>
+        </Card.Header>
+        <Card.Body>
+          {filters.map((filter, index) => (
+            <Row key={index} className="mb-3 align-items-center">
+              <Col md={4}>
+                <Form.Select
+                  value={filter.field}
+                  onChange={(e) => handleFilterChange(index, 'field', e.target.value)}
+                >
                   {availableFields.map((field) => (
-                    <td key={field.value}>{mat[field.value] || '-'}</td>
+                    <option key={field.value} value={field.value}>
+                      {field.label}
+                    </option>
                   ))}
-                  <td>
-                    <button onClick={() => {
-                      setFormData(mat);
-                      setEditingNumeroSerie(mat.numero_serie);
-                      setShowForm(true);
-                    }}>Modifier</button>
-                    <button onClick={() => handleDelete(mat.numero_serie)}>Supprimer</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+                </Form.Select>
+              </Col>
+              <Col md={6}>
+                <Form.Control
+                  type="text"
+                  placeholder={`Recherche par ${availableFields.find(f => f.value === filter.field)?.label}`}
+                  value={filter.value}
+                  onChange={(e) => handleFilterChange(index, 'value', e.target.value)}
+                />
+              </Col>
+              <Col md={2} className="text-end">
+                {filters.length > 1 && (
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => handleRemoveFilter(index)}
+                  >
+                    <X size={16} />
+                  </Button>
+                )}
+              </Col>
+            </Row>
+          ))}
+          <Button 
+            variant="primary" 
+            onClick={handleSearch}
+            className="d-flex align-items-center gap-2"
+          >
+            <FunnelFill size={16} /> Appliquer les Filtres
+          </Button>
+        </Card.Body>
+      </Card>
+
+      {/* Material Form Modal */}
+      <Modal show={showForm} onHide={() => setShowForm(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>{editingNumeroSerie ? 'Modifier Matériel' : 'Ajouter Nouveau Matériel'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleSubmit}>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Numéro Série *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="numero_serie"
+                    value={formData.numero_serie}
+                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                    required
+                    disabled={!!editingNumeroSerie}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Marque *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="marque"
+                    value={formData.marque}
+                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                    required
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Désignation Article</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="designation_article"
+                    value={formData.designation_article}
+                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Modèle</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="modele"
+                    value={formData.modele}
+                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Code ONEE</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="code_ONEE"
+                    value={formData.code_ONEE}
+                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Activité</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="activite"
+                    value={formData.activite}
+                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Famille</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="famille"
+                    value={formData.famille}
+                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Sous-Famille</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="sous_famille"
+                    value={formData.sous_famille}
+                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Agent</Form.Label>
+                  <Form.Select
+                    name="agent_matricule"
+                    value={formData.agent_matricule}
+                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                  >
+                    <option value="">Sélectionner un agent</option>
+                    {agents.map(agent => (
+                      <option key={agent.matricule} value={agent.matricule}>
+                        {agent.nom} {agent.prenom} ({agent.matricule})
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Contrat</Form.Label>
+                  <Form.Select
+                    name="numero_contrat"
+                    value={formData.numero_contrat}
+                    onChange={(e) => setFormData({...formData, [e.target.name]: e.target.value})}
+                  >
+                    <option value="">Sélectionner un contrat</option>
+                    {contrats.map(contrat => (
+                      <option key={contrat.id} value={contrat.numero_contrat}>
+                        {contrat.numero_contrat} - {contrat.objet}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowForm(false)}>
+            Annuler
+          </Button>
+          <Button variant="primary" onClick={handleSubmit}>
+            {editingNumeroSerie ? 'Mettre à jour' : 'Enregistrer'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Materials Table */}
+      <Card>
+        <Card.Header as="h5">Liste des Matériels</Card.Header>
+        <Card.Body>
+          {materiels.length === 0 ? (
+            <Alert variant="info">Aucun matériel trouvé</Alert>
+          ) : (
+            <div className="table-responsive">
+              <Table striped bordered hover>
+                <thead className="table-dark">
+                  <tr>
+                    {availableFields.map((field) => (
+                      <th key={field.value}>{field.label}</th>
+                    ))}
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {materiels.map((mat) => (
+                    <tr key={mat.numero_serie}>
+                      {availableFields.map((field) => (
+                        <td key={field.value}>
+                          {field.value === 'numero_serie' ? (
+                            <Badge bg="secondary">{mat[field.value]}</Badge>
+                          ) : (
+                            mat[field.value] || '-'
+                          )}
+                        </td>
+                      ))}
+                      <td>
+                        <div className="d-flex gap-2 justify-content-center">
+                          <Button 
+                            variant="outline-primary" 
+                            size="sm" 
+                            onClick={() => {
+                              setFormData(mat);
+                              setEditingNumeroSerie(mat.numero_serie);
+                              setShowForm(true);
+                            }}
+                            className="d-flex align-items-center gap-1"
+                          >
+                            <PencilSquare size={14} /> Modifier
+                          </Button>
+                          <Button 
+                            variant="outline-danger" 
+                            size="sm" 
+                            onClick={() => handleDelete(mat.numero_serie)}
+                            className="d-flex align-items-center gap-1"
+                          >
+                            <Trash size={14} /> Supprimer
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          )}
+        </Card.Body>
+      </Card>
     </div>
   );
 };
