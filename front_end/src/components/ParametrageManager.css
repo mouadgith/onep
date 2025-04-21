@@ -109,15 +109,6 @@
   border-bottom: 1px solid rgba(0,0,0,.125);
 }
 
-/* Style du tableau */
-.table {
-  margin-bottom: 0;
-}
-
-.table th {
-  background-color: #f8f9fa;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
   .parametrage-card {
