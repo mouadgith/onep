@@ -1,241 +1,8 @@
-
-// import React, { useState, useEffect } from 'react';
-// import './AgentManager.css';
-// function AgentManager() {
-//   const [agents, setAgents] = useState([]);
-//   const [formData, setFormData] = useState({
-//     matricule: '',
-//     nom: '',
-//     prenom: '',
-//     service: '',
-//     entite: 'ONEP',
-//     adresse_site: 'Agadir'
-//   });
-//   const [editingMatricule, setEditingMatricule] = useState(null);
-//   const [message, setMessage] = useState('');
-//   const [showForm, setShowForm] = useState(false);
-
-//   const API_URL = 'http://localhost:5000/api/agents';
-
-//   const fetchAgents = async () => {
-//     try {
-//       const response = await fetch(API_URL);
-//       if (!response.ok) throw new Error('Failed to fetch');
-//       const data = await response.json();
-//       setAgents(data);
-//     } catch (error) {
-//       setMessage(error.message);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchAgents();
-//   }, []);
-
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData(prev => ({ ...prev, [name]: value }));
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     const url = editingMatricule 
-//       ? `${API_URL}/${editingMatricule}` 
-//       : API_URL;
-//     const method = editingMatricule ? 'PUT' : 'POST';
-
-//     try {
-//       const response = await fetch(url, {
-//         method,
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify(formData)
-//       });
-
-//       if (!response.ok) throw new Error('Operation failed');
-
-//       const result = await response.json();
-//       setMessage(result.message);
-//       fetchAgents();
-//       resetForm();
-//       setShowForm(false);
-//     } catch (error) {
-//       setMessage(error.message);
-//     }
-//   };
-
-//   const handleEdit = (agent) => {
-//     setFormData(agent);
-//     setEditingMatricule(agent.matricule);
-//     setShowForm(true);
-//   };
-
-//   const handleDelete = async (matricule) => {
-//     if (!window.confirm('Are you sure you want to delete this agent?')) return;
-
-//     try {
-//       const response = await fetch(`${API_URL}/${matricule}`, {
-//         method: 'DELETE'
-//       });
-
-//       if (!response.ok) throw new Error('Delete failed');
-
-//       const result = await response.json();
-//       setMessage(result.message);
-//       fetchAgents();
-//     } catch (error) {
-//       setMessage(error.message);
-//     }
-//   };
-
-//   const resetForm = () => {
-//     setFormData({
-//         matricule: '',
-//         nom: '',
-//         prenom: '',
-//         service: '',
-//         entite: 'ONEP',
-//         adresse_site: 'Agadir'
-//     });
-//     setEditingMatricule(null);
-//   };
-
-//   return (
-//     <div className="agent-container">
-//       <h1>Agent Management</h1>
-
-//       {message && <div className="message">{message}</div>}
-
-//       <button className="toggle-button" onClick={() => setShowForm(!showForm)}>
-//         {showForm ? 'Hide Form' : 'Add Agent'}
-//       </button>
-
-//       {showForm && (
-//         <div className="form-container">
-//           <h2>{editingMatricule ? 'Edit Agent' : 'Add New Agent'}</h2>
-//           <form onSubmit={handleSubmit}>
-//             {!editingMatricule && (
-//               <div className="form-group">
-//                 <label>Matricule:</label>
-//                 <input
-//                   type="text"
-//                   name="matricule"
-//                   value={formData.matricule}
-//                   onChange={handleInputChange}
-//                   required
-//                 />
-//               </div>
-//             )}
-//             <div className="form-group">
-//               <label>Nom:</label>
-//               <input
-//                 type="text"
-//                 name="nom"
-//                 value={formData.nom}
-//                 onChange={handleInputChange}
-//                 required
-//               />
-//             </div>
-//             <div className="form-group">
-//               <label>Prenom:</label>
-//               <input
-//                 type="text"
-//                 name="prenom"
-//                 value={formData.prenom}
-//                 onChange={handleInputChange}
-//                 required
-//               />
-//             </div>
-//             <div className="form-group">
-//               <label>Service:</label>
-//               <input
-//                 type="text"
-//                 name="service"
-//                 value={formData.service}
-//                 onChange={handleInputChange}
-//                 required
-//               />
-//             </div>
-//             <div className="form-group">
-//               <label>Entite:</label>
-//               <select
-//                 name="entite"
-//                 value={formData.entite}
-//                 onChange={handleInputChange}
-//                 required
-//               >
-//                 <option value="sp6/1">sp6/1</option>
-//                 <option value="ONEP">sp6/1</option>
-//                 <option value="Other">Other</option>
-//               </select>
-//             </div>
-//             <div className="form-group">
-//               <label>Adresse Site:</label>
-//               <select
-//                 name="adresse_site"
-//                 value={formData.adresse_site}
-//                 onChange={handleInputChange}
-//                 required
-//               >
-//                 <option value="Agadir">Agadir</option>
-//                 <option value="Oujda">Oujda</option>
-//                 <option value="Rabat">Rabat</option>
-//                 <option value="Casablanca">Casablanca</option>
-//               </select>
-//             </div>
-//             <button type="submit">
-//               {editingMatricule ? 'Update Agent' : 'Add Agent'}
-//             </button>
-//             {editingMatricule && (
-//               <button type="button" onClick={resetForm}>Cancel</button>
-//             )}
-//           </form>
-//         </div>
-//       )}
-//       <div className="agents-list">
-//         <h2>Agents List</h2>
-//         {agents.length === 0 ? (
-//           <p>No agents found</p>
-//         ) : (
-//           <table>
-//             <thead>
-//               <tr>
-//                 <th>Matricule</th>
-//                 <th>Nom</th>
-//                 <th>Prenom</th>
-//                 <th>Service</th>
-//                 <th>Entite</th>
-//                 <th>Adresse Site</th>
-//                 <th>Actions</th>
-//               </tr>
-//             </thead>
-//             <tbody>
-//               {agents.map(agent => (
-//                 <tr key={agent.matricule}>
-//                   <td>{agent.matricule}</td>
-//                   <td>{agent.nom}</td>
-//                   <td>{agent.prenom}</td>
-//                   <td>{agent.service}</td>
-//                   <td>{agent.entite}</td>
-//                   <td>{agent.adresse_site}</td>
-//                   <td>
-//                     <button onClick={() => handleEdit(agent)}>Edit</button>
-//                     <button onClick={() => handleDelete(agent.matricule)}>Delete</button>
-//                   </td>
-//                 </tr>
-//               ))}
-//             </tbody>
-//           </table>
-//         )}
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default AgentManager;
 import React, { useState, useEffect } from 'react';
 import './AgentManager.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { Table, Button, Form, Modal, Alert, Container, Row, Col,Badge, Card } from 'react-bootstrap';
+import { PencilSquare, Trash, PlusLg,  } from 'react-bootstrap-icons';
 
 function AgentManager() {
   const [agents, setAgents] = useState([]);
@@ -351,150 +118,209 @@ function AgentManager() {
   };
 
   return (
-    <div className="agent-container">
-      <h1>Agent Management</h1>
+    <div className="py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>Agent Management</h1>
+        <Button 
+          variant="primary" 
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
+          className="d-flex align-items-center gap-2"
+        >
+          <PlusLg size={18} /> Add Agent
+        </Button>
+      </div>
 
-      {message && <div className="message">{message}</div>}
+      {message && (
+        <Alert variant={message.includes('failed') ? 'danger' : 'success'} dismissible onClose={() => setMessage('')}>
+          {message}
+        </Alert>
+      )}
 
-      <button className="toggle-button" onClick={() => setShowForm(!showForm)}>
-        {showForm ? 'Hide Form' : 'Add Agent'}
-      </button>
-
-      {showForm && (
-        <div className="form-container">
-          <h2>{editingMatricule ? 'Edit Agent' : 'Add New Agent'}</h2>
-          <form onSubmit={handleSubmit}>
+      {/* Agent Form Modal */}
+      <Modal show={showForm} onHide={() => setShowForm(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>{editingMatricule ? 'Edit Agent' : 'Add New Agent'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleSubmit}>
             {!editingMatricule && (
-              <div className="form-group">
-                <label>Matricule:</label>
-                <input
+              <Form.Group className="mb-3">
+                <Form.Label>Matricule</Form.Label>
+                <Form.Control
                   type="text"
                   name="matricule"
                   value={formData.matricule}
                   onChange={handleInputChange}
                   required
                 />
-              </div>
+              </Form.Group>
             )}
-            <div className="form-group">
-              <label>Nom:</label>
-              <input
-                type="text"
-                name="nom"
-                value={formData.nom}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Prenom:</label>
-              <input
-                type="text"
-                name="prenom"
-                value={formData.prenom}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Fonction:</label>
-              <input
+            
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Nom</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="nom"
+                    value={formData.nom}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Prenom</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="prenom"
+                    value={formData.prenom}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Fonction</Form.Label>
+              <Form.Control
                 type="text"
                 name="fonction"
                 value={formData.fonction}
                 onChange={handleInputChange}
                 required
               />
-            </div>
-            <div className="form-group">
-              <label>Email:</label>
-              <input
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
                 required
               />
-            </div>
-            <div className="form-group">
-              <label>Service:</label>
-              <input
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Service</Form.Label>
+              <Form.Control
                 type="text"
                 name="service"
                 value={formData.service}
                 onChange={handleInputChange}
                 required
               />
-            </div>
-            <div className="form-group">
-              <label>Telephone:</label>
-              <input
-                type="text"
-                name="telephone"
-                value={formData.telephone}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Adresse:</label>
-              <input
-                type="text"
-                name="adresse"
-                value={formData.adresse}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <button type="submit">
-              {editingMatricule ? 'Update Agent' : 'Add Agent'}
-            </button>
-            {editingMatricule && (
-              <button type="button" onClick={resetForm}>Cancel</button>
-            )}
-          </form>
-        </div>
-      )}
-      <div className="agents-list">
-        <h2>Agents List</h2>
-        {agents.length === 0 ? (
-          <p>No agents found</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Matricule</th>
-                <th>Nom</th>
-                <th>Prenom</th>
-                <th>Fonction</th>
-                <th>Email</th>
-                <th>Service</th>
-                <th>Telephone</th>
-                <th>Adresse</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {agents.map(agent => (
-                <tr key={agent.matricule}>
-                  <td>{agent.matricule}</td>
-                  <td>{agent.nom}</td>
-                  <td>{agent.prenom}</td>
-                  <td>{agent.fonction}</td>
-                  <td>{agent.email}</td>
-                  <td>{agent.service}</td>
-                  <td>{agent.telephone}</td>
-                  <td>{agent.adresse}</td>
-                  <td>
-                    <button onClick={() => handleEdit(agent)}>Edit</button>
-                    <button onClick={() => handleDelete(agent.matricule)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+            </Form.Group>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Telephone</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="telephone"
+                    value={formData.telephone}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Adresse</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="adresse"
+                    value={formData.adresse}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowForm(false)}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleSubmit}>
+            {editingMatricule ? 'Update Agent' : 'Add Agent'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Agents Table */}
+        <Card>
+              <Card.Header as="h5">Liste des Agents</Card.Header>
+              <Card.Body>
+              {agents.length === 0 ? (
+                <Alert variant="info">No agents found</Alert>
+              ) : (
+                <div className="table-responsive">
+                  <Table striped bordered hover className="mt-4">
+                    <thead className="table-dark">
+                      <tr>
+                        <th>Matricule</th>
+                        <th>Nom</th>
+                        <th>Prenom</th>
+                        <th>Fonction</th>
+                        <th>Email</th>
+                        <th>Service</th>
+                        <th>Telephone</th>
+                        <th>Adresse</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {agents.map(agent => (
+                        <tr key={agent.matricule}>
+                          <td><Badge bg="secondary">{agent.matricule}</Badge></td>
+                          <td>{agent.nom}</td>
+                          <td>{agent.prenom}</td>
+                          <td>{agent.fonction}</td>
+                          <td>{agent.email}</td>
+                          <td>{agent.service}</td>
+                          <td>{agent.telephone}</td>
+                          <td>{agent.adresse}</td>
+                          <td>
+                            <div className="d-flex gap-2 justify-content-center">
+                              <Button 
+                                variant="outline-primary" 
+                                size="sm" 
+                                onClick={() => {
+                                  handleEdit(agent);
+                                  setShowForm(true);
+                                }}
+                                className="d-flex align-items-center gap-1"
+                              >
+                                <PencilSquare size={14} /> Edit
+                              </Button>
+                              <Button 
+                                variant="outline-danger" 
+                                size="sm" 
+                                onClick={() => handleDelete(agent.matricule)}
+                                className="d-flex align-items-center gap-1"
+                              >
+                                <Trash size={14} /> Delete
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              )}
+       </Card.Body>
+       </Card>
     </div>
   );
 }
