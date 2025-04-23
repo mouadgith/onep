@@ -29,12 +29,14 @@ function App() {
   return (
     <div className="App">
       {auth && <Navbar auth={auth} logout={logout} />}
-      <section className="home p-5">
         <Routes>
           <Route 
-            path="/login" 
-            element={auth ? <Navigate to="/" /> : <Login setAuth={setAuth} />} 
-          />
+                path="/login" 
+                element={auth ? <Navigate to="/" /> : <Login setAuth={setAuth} />} 
+              />
+        </Routes>
+      <section className="home p-5">
+        <Routes>
           <Route 
             path="/" 
             element={auth ? <AgentManager /> : <Navigate to="/login" />} 
