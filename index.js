@@ -1,7 +1,8 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const bodyParser = require('body-parser');
-
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 const app = express();
 const PORT = 5000;
 const cors = require('cors');
@@ -9,7 +10,8 @@ const cors = require('cors');
 app.use(cors({
   origin: 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type']
+  allowedHeaders: ['Content-Type'],
+  credentials: true
 }));
 app.use(bodyParser.json());
 
@@ -287,33 +289,84 @@ app.get('/api/auth/:id', (req, res) => {
     if (!row) return res.status(404).json({ error: 'Auth user not found.' });
     res.status(200).json(row);
   });
-});
-
-app.post('/api/auth', (req, res) => {
-  const { login, pass } = req.body;
-  if (!login || !pass) return res.status(400).json({ error: 'Login and password are required.' });
-
-  const sql = 'INSERT INTO authentification (login, pass) VALUES (?, ?)';
-  db.run(sql, [login, pass], function (err) {
-    if (err) return res.status(500).json({ error: 'Failed to insert auth user.' });
-    res.status(201).json({ message: 'Auth user added.', id: this.lastID });
   });
-});
+app.post('/api/auth', async (req, res) => {
+  const { login, pass } = req.body;
+  if (!login || !pass) {
+    return res.status(400).json({ error: 'Login and password are required.' });
+  }
+  if (!/^(admin|agent)\d+$/.test(login)) {
+    return res.status(400).json({ 
+      error: 'Login must start with "admin" or "agent" followed by numbers (e.g. admin1, agent2).' 
+    });
+  }
+  try {
+    const existingUser = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM authentification WHERE login = ?', [login], (err, row) => {
+        if (err) reject(err);
+        resolve(row);
+      });
+    });
 
-app.put('/api/auth/:id', (req, res) => {
+    if (existingUser) {
+      return res.status(400).json({ error: 'Login already exists.' });
+    }
+    const hashedPass = await bcrypt.hash(pass, saltRounds);
+    const sql = 'INSERT INTO authentification (login, pass) VALUES (?, ?)';
+    db.run(sql, [login, hashedPass], function (err) {
+      if (err) return res.status(500).json({ error: 'Failed to create user.' });
+      res.status(201).json({ 
+        id: this.lastID,
+        login,
+        message: 'User created successfully.' 
+      });
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error during user creation.' });
+  }
+});
+app.put('/api/auth/:id', async (req, res) => {
   const { id } = req.params;
   const { login, pass } = req.body;
   
   if (!login || !pass) return res.status(400).json({ error: 'Login and password are required.' });
 
-  const sql = 'UPDATE authentification SET login = ?, pass = ? WHERE id = ?';
-  db.run(sql, [login, pass, id], function (err) {
-    if (err) return res.status(500).json({ error: 'Failed to update auth user.' });
-    if (this.changes === 0) return res.status(404).json({ error: 'Auth user not found.' });
-    res.status(200).json({ message: 'Auth user updated successfully.' });
+  try {
+    const hashedPass = await bcrypt.hash(pass, saltRounds);
+    const sql = 'UPDATE authentification SET pass = ? WHERE id = ?';
+    
+    db.run(sql, [hashedPass, id], function (err) {
+      if (err) return res.status(500).json({ error: 'Failed to update user.' });
+      if (this.changes === 0) return res.status(404).json({ error: 'User not found.' });
+      res.status(200).json({ message: 'Password updated successfully.' });
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to hash password.' });
+  }
+});
+app.post('/api/auth/login', async (req, res) => {
+  const { login, pass } = req.body;
+  if (!login || !pass) return res.status(400).json({ error: 'Login and password are required.' });
+
+  db.get('SELECT * FROM authentification WHERE login = ?', [login], async (err, row) => {
+    if (err) return res.status(500).json({ error: 'Database error.' });
+    if (!row) return res.status(401).json({ error: 'Invalid credentials.' });
+    
+    try {
+      const match = await bcrypt.compare(pass, row.pass);
+      if (!match) return res.status(401).json({ error: 'Invalid credentials.' });
+      
+      const userType = row.login.startsWith('admin') ? 'admin' : 'agent';
+      res.status(200).json({ 
+        id: row.id,
+        login: row.login,
+        type: userType
+      });
+    } catch (err) {
+      res.status(500).json({ error: 'Authentication error.' });
+    }
   });
 });
-
 app.delete('/api/auth/:id', (req, res) => {
   const { id } = req.params;
   const sql = 'DELETE FROM authentification WHERE id = ?';
@@ -324,23 +377,11 @@ app.delete('/api/auth/:id', (req, res) => {
     res.status(200).json({ message: 'Auth user deleted successfully.' });
   });
 });
-
 app.get('/api/societes', (_, res) => {
   const sql = 'SELECT * FROM societe';
   db.all(sql, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.status(200).json(rows);
-  });
-});
-
-app.get('/api/societes/:id', (req, res) => {
-  const { id } = req.params;
-  const sql = 'SELECT * FROM societe WHERE id = ?';
-  
-  db.get(sql, [id], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(404).json({ error: 'Company not found.' });
-    res.status(200).json(row);
   });
 });
 
@@ -354,34 +395,32 @@ app.post('/api/societes', (req, res) => {
     res.status(201).json({ message: 'Company added.', id: this.lastID });
   });
 });
-
-app.put('/api/societes/:id', (req, res) => {
-  const { id } = req.params;
-  const { id_fiscale, nom, email, entite } = req.body;
+app.put('/api/societes/:id_fiscale', (req, res) => {
+  const { id_fiscale } = req.params;
+  const { nom, email, entite } = req.body;
   
   if (!nom) return res.status(400).json({ error: 'Company name is required.' });
 
-  const sql = 'UPDATE societe SET id_fiscale = ?, nom = ?, email = ?, entite = ? WHERE id = ?';
-  db.run(sql, [id_fiscale, nom, email, entite, id], function (err) {
+  const sql = 'UPDATE societe SET nom = ?, email = ?, entite = ? WHERE id_fiscale = ?';
+  db.run(sql, [nom, email, entite, id_fiscale], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     if (this.changes === 0) return res.status(404).json({ error: 'Company not found.' });
     res.status(200).json({ message: 'Company updated successfully.' });
   });
 });
 
-app.delete('/api/societes/:id', (req, res) => {
-  const societeId = req.params.id;
+app.delete('/api/societes/:id_fiscale', (req, res) => {
+  const societeId = req.params.id_fiscale;
 
   db.run('DELETE FROM contrat WHERE societe_id = ?', [societeId], function (err) {
     if (err) return res.status(500).json({ error: 'Failed to delete contracts.' });
 
-    db.run('DELETE FROM societe WHERE id = ?', [societeId], function (err) {
+    db.run('DELETE FROM societe WHERE id_fiscale = ?', [societeId], function (err) {
       if (err) return res.status(500).json({ error: 'Failed to delete company.' });
       res.status(200).json({ message: 'Company and related contracts deleted.' });
     });
   });
 });
-
 
 app.get('/api/societes-with-contrats', (_, res) => {
   const sql = `

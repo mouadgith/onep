@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Table, Button, Form, Modal, Alert, Container, Badge, Col, Row, Card } from 'react-bootstrap';
 import { PencilSquare, Trash, PlusLg, Funnel, CheckLg } from 'react-bootstrap-icons';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const MaterielManager = () => {
   const [materiels, setMateriels] = useState([]);
@@ -36,7 +40,42 @@ const MaterielManager = () => {
     agent_matricule: '',
     numero_contrat: ''
   });
-
+  
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredMateriels);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Matériels");
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(data, 'materiels.xlsx');
+  };
+  
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.text('Liste des Matériels', 14, 15);
+    
+    // Prepare data for the table
+    const tableData = filteredMateriels.map(mat => [
+      mat.numero_serie,
+      mat.marque,
+      mat.modele || '-',
+      mat.activite || '-',
+      mat.famille || '-',
+      mat.sous_famille || '-',
+      agents.find(a => a.matricule.toString() === mat.agent_matricule)?.nom || '-'
+    ]);
+    autoTable(doc, {
+      head: [['Numéro Série', 'Marque', 'Modèle', 'Activité', 'Famille', 'Sous-Famille', 'Agent']],
+      body: tableData,
+      startY: 20,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+    
+    doc.save('materiels.pdf');
+  };
   useEffect(() => {
     fetchMateriels();
     fetchAgents();
@@ -167,26 +206,39 @@ const MaterielManager = () => {
   return (
     <Container className="py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>Gestion des Matériels</h1>
-        <Button 
-          variant="primary" 
-          onClick={() => {
-            resetForm();
-            setShowForm(true);
-          }}
-          className="d-flex align-items-center gap-2"
-        >
-          <PlusLg size={18} /> Ajouter Matériel
-        </Button>
-      </div>
-
+  <h1>Gestion des Matériels</h1>
+  <div className="d-flex gap-2">
+    <Button 
+      variant="success" 
+      onClick={exportToExcel}
+      className="d-flex align-items-center gap-2"
+    >
+      <i className="bi bi-file-earmark-excel"></i> Export Excel
+    </Button>
+    <Button 
+      variant="danger" 
+      onClick={exportToPDF}
+      className="d-flex align-items-center gap-2"
+    >
+      <i className="bi bi-file-earmark-pdf"></i> Export PDF
+    </Button>
+    <Button 
+      variant="primary" 
+      onClick={() => {
+        resetForm();
+        setShowForm(true);
+      }}
+      className="d-flex align-items-center gap-2"
+    >
+      <PlusLg size={18} /> Ajouter Matériel
+    </Button>
+  </div>
+</div>
       {message && (
         <Alert variant={message.includes('Erreur') ? 'danger' : 'success'} dismissible onClose={() => setMessage('')}>
           {message}
         </Alert>
       )}
-
-      {/* Filter Section */}
       <Card className="mb-4">
         <Card.Header>
           <h5 className="d-flex align-items-center gap-2">
@@ -474,6 +526,7 @@ const MaterielManager = () => {
                     <th>Modèle</th>
                     <th>Activité</th>
                     <th>Famille</th>
+                    <th>Sous-Famille</th>
                     <th>Agent</th>
                     <th>Actions</th>
                   </tr>
@@ -489,6 +542,7 @@ const MaterielManager = () => {
                       <td>{mat.modele || '-'}</td>
                       <td>{mat.activite || '-'}</td>
                       <td>{mat.famille || '-'}</td>
+                      <td>{mat.sous_famille || '-'}</td>
                       <td>
                         {agents.find(a => a.matricule.toString() === mat.agent_matricule)?.nom || '-'}
                       </td>

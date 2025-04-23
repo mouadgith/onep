@@ -115,4 +115,51 @@
     margin-bottom: 1.5rem;
   }
 }
+/* Add these styles to your existing ParametrageManager.css */
+
+/* User type colors */
+.user-type-admin {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.user-type-agent {
+  color: #0d6efd;
+  font-weight: bold;
+}
+
+/* Form controls in UserManager */
+.user-manager-form .form-control {
+  flex: 1;
+  min-width: 0; /* Allows flex items to shrink properly */
+}
+
+/* Button adjustments */
+.user-manager-form .btn {
+  white-space: nowrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .user-manager-form {
+    flex-direction: column;
+    gap: 10px;
+  }
   
+  .user-manager-form .btn {
+    width: 100%;
+  }
+}
+
+/* Table action buttons */
+.table-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* Editing mode styles */
+.editing-mode {
+  background-color: #fff3cd !important;
+  transition: background-color 0.3s ease;
+}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Table, Button, Form, Modal, Alert, Container, Badge, Dropdown, Card, Row, Col } from 'react-bootstrap';
 import { PencilSquare, Trash, PlusLg, X, Building, CheckCircle } from 'react-bootstrap-icons';
-import './ContractManager.css'; // Make sure to create this CSS file
+import './ContractManager.css'; 
 
 const ContractManager = () => {
   const [allContracts, setAllContracts] = useState([]);
