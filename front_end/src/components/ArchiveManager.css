@@ -1,0 +1,36 @@
+.archive-container {
+    padding: 20px;
+  }
+  
+  .archive-table {
+    margin-top: 20px;
+  }
+  
+  .archive-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+  }
+  
+  .badge-archived {
+    background-color: #6c757d;
+  }
+  
+  .no-archive-message {
+    margin-top: 20px;
+    text-align: center;
+    color: #6c757d;
+  }
+  
+  .refresh-btn {
+    margin-bottom: 20px;
+  }
+  
+  .table-responsive {
+    overflow-x: auto;
+  }
+  
+  /* Spinner styles */
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+  }

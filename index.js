@@ -15,6 +15,7 @@ app.use(cors({
 }));
 app.use(bodyParser.json());
 
+
 const db = new sqlite3.Database('./onep_data.db');
 
 app.get('/api/agents', (_, res) => {
@@ -40,6 +41,18 @@ app.get('/api/agents/:matricule', (req, res) => {
       return res.status(404).json({ error: 'Agent not found.' });
     }
     res.status(200).json(row);
+  });
+});
+app.get('/api/materiels/archived', (req, res) => {
+  const sql = 'SELECT * FROM materiel_archive ORDER BY date_archivage DESC';
+  console.log('> Exécution SQL:', sql);
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Failed to fetch archived materials' });
+    }
+    console.log('> Rows trouvées:', rows);
+    res.json(rows);
   });
 });
 
@@ -260,17 +273,46 @@ app.put('/api/materiels/:numero_serie', (req, res) => {
 
 app.delete('/api/materiels/:numero_serie', (req, res) => {
   const { numero_serie } = req.params;
-  const sql = `DELETE FROM materiel WHERE numero_serie = ?`;
+  const { company_returned_to, reason } = req.body;
 
-  db.run(sql, [numero_serie], function (err) {
-    if (err) {
-      console.error(err.message);
-      return res.status(500).json({ error: 'Failed to delete materiel.' });
-    }
-    if (this.changes === 0) {
-      return res.status(404).json({ error: 'Materiel not found.' });
-    }
-    res.status(200).json({ message: 'Materiel deleted successfully!' });
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
+
+    db.run(
+      `INSERT INTO materiel_archive 
+      (numero_serie, marque, designation_article, modele, code_ONEE, 
+       activite, famille, sous_famille, agent_matricule, numero_contrat,
+       company_returned_to, reason, date_archivage)
+      SELECT 
+       numero_serie, marque, designation_article, modele, code_ONEE,
+       activite, famille, sous_famille, agent_matricule, numero_contrat,
+       ?, ?, DATETIME('now')
+      FROM materiel 
+      WHERE numero_serie = ?`,
+      [company_returned_to, reason, numero_serie],
+      function (err) {
+        if (err) {
+          console.error("Archive insert error:", err.message);
+          db.run('ROLLBACK');
+          return res.status(500).json({ error: 'Failed to insert archive' });
+        }
+
+        db.run(
+          'DELETE FROM materiel WHERE numero_serie = ?',
+          [numero_serie],
+          function (err2) {
+            if (err2) {
+              console.error("Delete error:", err2.message);
+              db.run('ROLLBACK');
+              return res.status(500).json({ error: 'Failed to delete original materiel' });
+            }
+
+            db.run('COMMIT');
+            return res.status(200).json({ message: 'Material archived and deleted successfully' });
+          }
+        );
+      }
+    );
   });
 });
 
@@ -350,11 +392,11 @@ app.post('/api/auth/login', async (req, res) => {
 
   db.get('SELECT * FROM authentification WHERE login = ?', [login], async (err, row) => {
     if (err) return res.status(500).json({ error: 'Database error.' });
-    if (!row) return res.status(401).json({ error: 'Invalid credentials.' });
+    if (!row) return res.status(401).json({ error: 'login ou pass invalid.' });
     
     try {
       const match = await bcrypt.compare(pass, row.pass);
-      if (!match) return res.status(401).json({ error: 'Invalid credentials.' });
+      if (!match) return res.status(401).json({ error: 'login ou pass invalid' });
       
       const userType = row.login.startsWith('admin') ? 'admin' : 'agent';
       res.status(200).json({ 
@@ -584,6 +626,9 @@ app.delete('/api/parametrage/:id', (req, res) => {
     res.status(200).json({ message: 'Valeur supprimée.' });
   });
 });
+
+
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

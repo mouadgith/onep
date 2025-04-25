@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import Accueil from "./components/AccueilPage";
 import "./App.css";
 import AgentManager from "./components/AgentManager";
 import MaterielManager from "./components/MaterielManager";
 import ParametrageGestion from "./components/ParametrageGestion";
 import ContractManager from "./components/ContractManager";
+import ArchiveManager from "./components/ArchiveManager";
 import Login from "./components/LoginPage";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -29,16 +31,22 @@ function App() {
   return (
     <div className="App">
       {auth && <Navbar auth={auth} logout={logout} />}
-        <Routes>
-          <Route 
-                path="/login" 
-                element={auth ? <Navigate to="/" /> : <Login setAuth={setAuth} />} 
-              />
-        </Routes>
+
+      <Routes>
+        <Route 
+          path="/login" 
+          element={auth ? <Navigate to="/" /> : <Login setAuth={setAuth} />} 
+        />
+      </Routes>
+
       <section className="home p-5">
         <Routes>
           <Route 
             path="/" 
+            element={auth ? <Accueil auth={auth} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/agents" 
             element={auth ? <AgentManager /> : <Navigate to="/login" />} 
           />
           <Route 
@@ -48,6 +56,10 @@ function App() {
           <Route 
             path="/contrats" 
             element={auth ? <ContractManager /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/archive" 
+            element={auth ? <ArchiveManager /> : <Navigate to="/login" />} 
           />
           <Route 
             path="/parametrage" 

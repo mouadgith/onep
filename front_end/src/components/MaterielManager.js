@@ -170,14 +170,27 @@ const MaterielManager = () => {
   };
 
   const handleDelete = async (numero_serie) => {
-    if (!window.confirm('Supprimer ce matériel ?')) return;
+    const company_returned_to = prompt("Enter company name returned to:");
+    const reason = prompt("Reason for removal (replacement/return/etc):");
+    
+    if (!company_returned_to || !reason) return;
+
     try {
-      await axios.delete(`http://localhost:5000/api/materiels/${numero_serie}`);
-      setMessage('Matériel supprimé avec succès');
+      const response = await fetch(`http://localhost:5000/api/materiels/${numero_serie}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ company_returned_to, reason })
+      });
+  
+      if (!response.ok) throw new Error('Delete failed');
+      
+      const result = await response.json();
+      setMessage(result.message);
       fetchMateriels();
-      setTimeout(() => setMessage(''), 5000);
     } catch (error) {
-      setMessage("Erreur lors de la suppression: " + error.message);
+      setMessage(error.message);
     }
   };
 
